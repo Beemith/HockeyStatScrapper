@@ -1,4 +1,6 @@
 from django.shortcuts import render
+from django.urls import reverse
+from django.http import HttpResponseRedirect
 from .forms import TeamsForm
 from django_tables2 import RequestConfig
 import mysql.connector
@@ -32,44 +34,53 @@ def index(request):
 	return render(request, 'hockeystats/index.html', {'form':form, 'people':table})
 	
 def team(request, selected_id):
-	player_stats = []
-	player_ids = []
-	conn = mysql.connector.connect(**config)
-	cursor = conn.cursor()
-	cursor.callproc('GET_PLAYER_LIST',(selected_id,))
-	for buff in cursor.stored_results():
-		result = buff.fetchall()
-		for id in result:
-			player_ids.append(id[0])
-	for id in player_ids:
-		player = Player.objects.get(player_id=id)
-		name = player.first_name + " " + player.last_name
-		cursor.close()
+	if request.method == 'POST':
+		team_id = request.POST['team']
+		print(team_id)
+		return HttpResponseRedirect(reverse('hockeystats:team',args=(team_id,)))
+	else:
+		player_stats = []
+		player_ids = []
+		team = Team.objects.get(team_id=selected_id)
+		team_name = team.name.lower().capitalize()
+		conn = mysql.connector.connect(**config)
+		form_info = TeamsForm()
+		_id = team.team_id
 		cursor = conn.cursor()
-		cursor.callproc('GET_PLAYER_STATS',(id,2019))
+		cursor.callproc('GET_PLAYER_LIST',(selected_id,))
 		for buff in cursor.stored_results():
 			result = buff.fetchall()
-			points = result[0][0]
-			goals = result[0][1]
-			assists = result[0][2]
-			p_m = result[0][3]
-			pen = result[0][4]
-			pen_min = result[0][5]
-			shots = result[0][6]
-			ab = result[0][7]
-			ms = result[0][8]
-			ht = result[0][9]
-			gv = result[0][10]
-			tk = result[0][11]
-			bs = result[0][12]
-			player_stats.append({'player_id':id, 'Name':name, 'Points':points, 'Goals':goals, "Assists":assists, "Plus_Minus":p_m,
-								"Penalties":pen, 'Penalty_Min':pen_min, 'Shots':shots, 'AB':ab, 'MS':ms, 'HT':ht, 'GV':gv, 
-								'TK':tk, 'BS':bs})
-	cursor.close()
-	conn.close()
-	table = PlayersStatTable(player_stats)
-	RequestConfig(request, paginate={'per_page':len(player_stats)}).configure(table)
-	return render(request, 'hockeystats/team.html', {'players':table})
+			for id in result:
+				player_ids.append(id[0])
+		for id in player_ids:
+			player = Player.objects.get(player_id=id)
+			name = player.first_name + " " + player.last_name
+			cursor.close()
+			cursor = conn.cursor()
+			cursor.callproc('GET_PLAYER_STATS',(id,2019))
+			for buff in cursor.stored_results():
+				result = buff.fetchall()
+				points = result[0][0]
+				goals = result[0][1]
+				assists = result[0][2]
+				p_m = result[0][3]
+				pen = result[0][4]
+				pen_min = result[0][5]
+				shots = result[0][6]
+				ab = result[0][7]
+				ms = result[0][8]
+				ht = result[0][9]
+				gv = result[0][10]
+				tk = result[0][11]
+				bs = result[0][12]
+				player_stats.append({'player_id':id, 'Name':name, 'Points':points, 'Goals':goals, "Assists":assists, "Plus_Minus":p_m,
+									"Penalties":pen, 'Penalty_Min':pen_min, 'Shots':shots, 'AB':ab, 'MS':ms, 'HT':ht, 'GV':gv, 
+									'TK':tk, 'BS':bs})
+		cursor.close()
+		conn.close()
+		table = PlayersStatTable(player_stats)
+		RequestConfig(request, paginate={'per_page':len(player_stats)}).configure(table)
+		return render(request, 'hockeystats/team.html', {'team_id':_id, 'form':form_info,'team_name':team_name,'players':table})
 
 def player(request, selected_id):
 	game_stats=[]
@@ -77,6 +88,9 @@ def player(request, selected_id):
 	conn = mysql.connector.connect(**config)
 	cursor = conn.cursor()
 	cursor.callproc("GET_ALL_GAME_STATS",(selected_id,2019))
+	player = Player.objects.get(player_id=selected_id)
+	name = player.first_name.lower().capitalize() + " " + player.last_name.lower().capitalize()
+	print(name)
 	for buff in cursor.stored_results():
 		results = buff.fetchall()
 		for result in results:
@@ -118,5 +132,5 @@ def player(request, selected_id):
 	conn.close()
 	table = GameStatTable(game_stats)
 	RequestConfig(request, paginate={'per_page':len(game_stats)}).configure(table)
-	return render(request, 'hockeystats/player.html', {'games':table})
+	return render(request, 'hockeystats/player.html', {'player_name':name, 'games':table})
 

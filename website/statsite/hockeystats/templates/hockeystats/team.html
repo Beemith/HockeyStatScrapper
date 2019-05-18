@@ -1,9 +1,33 @@
 {% load render_table from django_tables2 %}
 <html>
-	<head>
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
-	</head>
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <style>
+        .title {
+            text-align: center;
+            text-decoration: underline;
+            text-transform:capitalize;
+        }
+
+        hr {
+            display: block;
+            height: 1px;
+            border: 0;
+            border-top: 1px solid #ccc;
+            margin: 1em 0;
+            padding: 0;
+        }
+    </style>
+</head>
 	<body>
+        <h1 class="title">Player Statistics for the {{team_name}}</h1>
+        <form action="{% url 'hockeystats:team' team_id %}" method="post">
+            {% csrf_token %}
+            {{form}}
+            <br/>
+            <input type="submit" value="Submit"/>
+        </form>
+        <hr/>
 		{% render_table players %}
 	</body>
 </html>
