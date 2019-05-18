@@ -2,15 +2,24 @@
 <html>
 	<head>
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+        <style>
+            .title{
+                text-align:center;
+                text-decoration:underline;
+            }
+            hr{
+                display:block;
+                height: 1px;
+                border: 0;
+                border-top: 1px solid #ccc;
+                margin: 1em 0;
+                padding:0;
+            }
+        </style>
 	</head>
-	<h1>LIST OF THE NHL TEAMS</h1>
-	<body>
-		<form action="/your-name/" method="post">
-			{% csrf_token %}
-			{{ form }}
-			<br/>
-			<input type="submit" value="Submit">
-		</form>
-		{% render_table people %}
-	</body>
+    <body>
+        <h1 class="title">Team Statistics</h1>
+        <hr />
+        {% render_table people %}
+    </body>
 </html>
